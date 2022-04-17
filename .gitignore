@@ -1,3 +1,4 @@
 .idea
 *.iml
 try.py
+__pychache__/

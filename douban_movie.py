@@ -5,6 +5,8 @@ import time
 import psycopg2
 import requests
 
+from selenium_connect import selenium_doubanmovie, close_webdriver
+
 
 class MovieData:
     # 电影数据模型
@@ -12,8 +14,8 @@ class MovieData:
         self.id = id
         self.title = title
         self.rate = rate if rate else 0
-        self.directors = ','.join(directors)
-        self.casts = ','.join(casts)
+        self.directors = ','.join(directors).replace("'", '_')
+        self.casts = ','.join(casts).replace("'", '_')
         self.url = url
         self.star = star if rate else 0
         self.cover = cover
@@ -132,7 +134,7 @@ def crawl_douban_movie():
 
     print(">>>>>>>>>>>>>>>>>>> 开始爬取数据 >>>>>>>>>>>>>>>>>>>>")
     while progress <= MAX:
-        data = obtainResource(progress)
+        data = obtainResource_selenum(progress)
         if data:
             if len(data.get('data')) > 0:
                 # 解析数据
@@ -195,6 +197,28 @@ def obtainResource(progress: int) -> dict:
             return {}
 
 
+def obtainResource_selenum(progress: int) -> dict:
+    # 使用selenium 爬取
+    url = URL + str(progress)
+    count = 0
+    first = 10  # 初次ip异常时暂停时间
+    while True:
+        result_data = selenium_doubanmovie(url)
+        # 正常获取数据
+        if result_data.get('data'):
+            print(f"成功获取进度 {progress} 的数据 {len(result_data.get('data'))}条")
+            time.sleep(random.randint(5, 20))
+            return result_data
+        elif result_data.get('msg'):
+            print(f"IP被检查异常 ==> {result_data.get('msg')}")
+            time.sleep(first * (count + 1))
+            count += 1
+        else:
+            close_webdriver() # 关闭浏览器
+            raise Exception(f'错误的数据格式 ==> {result_data}')
+
+
 if __name__ == '__main__':
+    # 单独爬取json数据会被禁IP
     crawl_douban_movie()
     pass
