@@ -214,7 +214,7 @@ def obtainResource_selenum(progress: int) -> dict:
             time.sleep(first * (count + 1))
             count += 1
         else:
-            close_webdriver() # 关闭浏览器
+            close_webdriver()  # 关闭浏览器
             raise Exception(f'错误的数据格式 ==> {result_data}')
 
 
