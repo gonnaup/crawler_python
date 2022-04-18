@@ -12,7 +12,7 @@ class MovieData:
     # 电影数据模型
     def __init__(self, id, title, rate, directors, casts, url, star, cover, cover_x, cover_y, progress):
         self.id = id
-        self.title = title
+        self.title = str(title).replace("'", '')
         self.rate = rate if rate else 0
         self.directors = ','.join(directors).replace("'", '_')
         self.casts = ','.join(casts).replace("'", '_')
