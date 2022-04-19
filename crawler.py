@@ -33,6 +33,18 @@ class BaseCrawlerEngine:
         self.data_handler = data_handler
 
     def start_crawler_engine(self):
+        self.before_crawl()
         for url in self.url_item:
+            self.before_parse_url()
             data = self.url_parser.parse_url(url)
+            self.before_handle_data(data)
             self.data_handler.handle(data)
+
+    def before_crawl(self):
+        pass
+
+    def before_parse_url(self):
+        pass
+
+    def before_handle_data(self, data):
+        pass
