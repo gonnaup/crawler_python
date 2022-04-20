@@ -15,10 +15,10 @@ from url_crawler import BaseUrlItem, BaseUrlParser, BaseDataHandler, DefualtCraw
 
 
 class DoubanNovelUrlItem(BaseUrlItem):
-    MAX_PAGE = 50
 
-    def __init__(self):
+    def __init__(self, max_page: int):
         self.current_page = 1
+        self.MAX_PAGE = max_page
 
     def current_progress(self) -> int:
         return self.current_page
@@ -141,6 +141,6 @@ class DoubanNovelCrawlerEngine(DefualtCrawlerEngine):
 
 
 if __name__ == '__main__':
-    engine = DoubanNovelCrawlerEngine(url_item=DoubanNovelUrlItem(), url_parser=DoubanNovelSeleniumUrlParser(),
+    engine = DoubanNovelCrawlerEngine(url_item=DoubanNovelUrlItem(2), url_parser=DoubanNovelSeleniumUrlParser(),
                                       data_handler=DoubanNovelDataHandler())
     engine.start_crawl()
