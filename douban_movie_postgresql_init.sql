@@ -25,7 +25,7 @@ create table crawl_doubanmovie_data (
 	id integer not null,
 	title varchar(50) not null,
 	rate decimal(2, 1) default 0.0 not null,
-	directors varchar(200),
+	directors varchar(500),
 	casts varchar(500),
 	url varchar(200),
 	star integer,

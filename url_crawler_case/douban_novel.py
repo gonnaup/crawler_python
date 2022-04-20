@@ -2,6 +2,7 @@ import json
 import time
 from typing import Any
 
+import pika
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -87,6 +88,10 @@ class DoubanNovelSeleniumUrlParser(BaseUrlParser):
 
     def _parse_node(self, root: Tag) -> {}:
         data = {}
+        id_content = root.attrs['to']  # /column/60817682/
+        _id = id_content[8:len(id_content) - 1]
+        data['id'] = _id
+
         root_div = root.find('div')
 
         info_div = root_div.find('div', class_='info')
@@ -126,21 +131,36 @@ class DoubanNovelSeleniumUrlParser(BaseUrlParser):
         print('shutdown webdriver complete...')
 
 
-class DoubanNovelDataHandler(BaseDataHandler):
+class RabbitDoubanNovelDataHandler(BaseDataHandler):
+    """
+    将数据发送到rabbitMQ中
+    """
 
-    def __int__(self):
-        pass
+    def __init__(self, queue_name, exchange_name):
+        self._queue_name = queue_name
+        self._exchange_name = exchange_name
+        credential = pika.PlainCredentials('test', 'test')
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters('linuxserver.cn', port=5672, virtual_host='/', credentials=credential))
+        self.__channal = connection.channel()
+        # self.__channal.queue_declare(queue=self._queue_name)
 
     def handle(self, data: Any):
         d = json.dumps(data, ensure_ascii=False)
+        # self.__channal.basic_publish(exchange='', routing_key=self._queue_name, body=d.encode(encoding='utf-8'))
         print(d)
 
 
 class DoubanNovelCrawlerEngine(DefualtCrawlerEngine):
-    pass
+
+    def _after_handle_data(self, data, progress: int):
+        super()._after_handle_data(data, progress)
+        time.sleep(1)
 
 
 if __name__ == '__main__':
-    engine = DoubanNovelCrawlerEngine(url_item=DoubanNovelUrlItem(2), url_parser=DoubanNovelSeleniumUrlParser(),
-                                      data_handler=DoubanNovelDataHandler())
+    _queue_name = '_crawler_douban_novel'
+    _exchange_name = '_exchange_crawler'
+    engine = DoubanNovelCrawlerEngine(url_item=DoubanNovelUrlItem(1), url_parser=DoubanNovelSeleniumUrlParser(),
+                                      data_handler=RabbitDoubanNovelDataHandler(_queue_name, _exchange_name))
     engine.start_crawl()
