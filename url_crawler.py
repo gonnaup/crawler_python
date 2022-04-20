@@ -32,6 +32,11 @@ class BaseUrlParser:
 
     @abstractmethod
     def parse_url(self, url) -> Any:
+        """
+        解析url获取所需数据
+        :param url: url
+        :return: 网页数据
+        """
         raise Exception('method not support!')
 
 
@@ -42,6 +47,11 @@ class BaseDataHandler:
 
     @abstractmethod
     def handle(self, data: Any):
+        """
+        数据处理
+        :param data:
+        :return:
+        """
         print(data)
 
 
@@ -56,6 +66,13 @@ class DefualtExcutor:
 
     @abstractmethod
     def excute(self, task, *args, **kwargs):
+        """
+        执行器执行爬取任务
+        :param task: 任务方法
+        :param args:
+        :param kwargs:
+        :return:
+        """
         task(*args, **kwargs)
 
 
@@ -69,6 +86,10 @@ class DefualtCrawlerEngine:
         self.excutor = excutor
 
     def start_crawl(self):
+        """
+        开始爬取
+        :return:
+        """
         self.__start_crawler_engine()
 
     def __start_crawler_engine(self):
@@ -77,7 +98,7 @@ class DefualtCrawlerEngine:
         """
         self._before_crawl()
         for url in self.url_item:
-            self.excutor.excute(self.__crawl_item(url))
+            self.excutor.excute(self.__crawl_item, url)
 
     def __crawl_item(self, url):
         progress = self.url_item.current_progress()
