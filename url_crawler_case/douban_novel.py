@@ -1,4 +1,5 @@
 import json
+import random
 import sys
 import time
 from typing import Any
@@ -220,6 +221,7 @@ class RabbitDoubanNovelDataHandler(BaseDataHandler):
                                                                     headers={
                                                                         '__TypeId__': 'novel'}))  # 指定类型，便于java的json转换器转换成指定的java类
         print(f"发送小说数据 {len(data)} 条到rabbitmq...")
+        time.sleep(random.randint(2, 10)) # 间隔时间，减少封IP风险
 
 
 class DoubanNovelCrawlerEngine(DefualtCrawlerEngine):
