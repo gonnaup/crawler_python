@@ -42,6 +42,7 @@ class BlockTrade(Model):
 class BlockTradesNodeLoader(NodeLoader):
     _current_page = 1
     _url = 'http://data.10jqka.com.cn/market/dzjy/'
+    _first_load = True
 
     def __init__(self):
         """
@@ -61,6 +62,7 @@ class BlockTradesNodeLoader(NodeLoader):
             '''
         driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": script})
         self.__driver = driver
+        self.__driver.implicitly_wait(5)
         self.__driver.get(self._url)
         # 绑定 db
         Progress.bind(database=db)
@@ -88,7 +90,7 @@ class BlockTradesNodeLoader(NodeLoader):
 
     def load_next(self):
         if self._current_page < self.max_page:
-            if self._current_page > 1:
+            if not self._first_load:
                 print(f'开始翻页 [{self._current_page}] -> [{self._current_page + 1}] ...')
                 self.__find_next_button().click()
                 self.__wait_page_load_completed()
@@ -104,6 +106,7 @@ class BlockTradesNodeLoader(NodeLoader):
             print(f'加载第 [{self._current_page}] 页数据节点...')
             assert self._current_page == self.__find_cur_page()
             btfs = BeautifulSoup(self.__driver.page_source, 'lxml')
+            self._first_load = False
             """
             BeautifulSoup:
             find()、findAll()：只查找子节点中的元素
@@ -153,10 +156,66 @@ class BlockTradesNodeLoader(NodeLoader):
             # 循环点击，直到 currentpage > progress
             while (_cur_page := self.__find_cur_page()) < target_page:
                 print(f'当前页为 [{_cur_page}]')
-                self.__find_next_button().click()
-                self.__wait_page_load_completed()
+
+                page_a_number_els = self.__find_page_els()
+                pagination_max_page = page_a_number_els[len(page_a_number_els) - 1]
+                # 当前最大可点击页码
+                cur_max_page_num = int(pagination_max_page.text.strip())
+                # 当前最大页码小于目标页码
+                if cur_max_page_num < target_page:
+                    # 最后一页有点击bug
+                    if cur_max_page_num < self.max_page - 10:
+                        # 点击最大页码
+                        pagination_max_page.click()
+                        print(f'点击页码 {cur_max_page_num}')
+                        self.__wait_page_load_completed()
+                        if (p := self.__find_cur_page()) != cur_max_page_num:
+                            sleep(3)
+                            if self.__find_cur_page() != cur_max_page_num:
+                                print(f'点击页码 {cur_max_page_num} 失败，当前页 {p}')
+
+                    # 点击下一页
+                    self.__find_next_button().click()
+                    self.__wait_page_load_completed()
+                else:
+                    for p in page_a_number_els:
+                        if target_page == int(p.text.strip()):
+                            print(f'找到初始化页面 {target_page}')
+                            p.click()
+                            self.__wait_page_load_completed()
+                            wait_count = 0
+                            while self.__find_cur_page() != target_page:
+                                if wait_count > 10:
+                                    print(f'多次等待后尝试重新点击 {target_page} ye')
+                                    p.click()
+                                print(f'@@@等待 {target_page} 页加载完毕')
+                                sleep(1)
+                                wait_count += 1
+                            break
+
             self._current_page = _cur_page
+            assert self._current_page == self._progress.progress + 1
             print(f'页面初始化到 [{self._current_page}] 完毕 ...')
+
+    def __find_page_els(self):
+        retry = 1
+        # 所有数字页码 el
+        while True:
+            try:
+                page_a_els = self.__driver.find_element(By.XPATH, '//*[@id="J-ajax-main"]/div[2]').find_elements(
+                    By.TAG_NAME, 'a')
+                page_a_number_els = list(filter(lambda el: str(el.text).strip().isnumeric(), page_a_els))
+                # 按页号大小排序
+                page_a_number_els.sort(key=lambda x: int(x.text))
+                for p in page_a_number_els:
+                    # just check the element loaded
+                    str(p.text)
+                return page_a_number_els
+            except Exception as e:
+                if retry > 3:
+                    raise Exception(e)
+                sleep(retry)
+                retry += 1
 
     def __find_cur_page(self) -> int:
         """
@@ -243,7 +302,7 @@ class BlockTradesHandler(DomainHandler):
 
 def start_crawle_blockTrade():
     engine = CommonCrawleEngine(BlockTradesNodeLoader(), BlockTradesNodePaser(), BlockTradesHandler())
-    engine.engin_start(stop_max=20, stop_min=10)
+    engine.engin_start(stop_max=10, stop_min=5)
 
 
 if __name__ == '__main__':
