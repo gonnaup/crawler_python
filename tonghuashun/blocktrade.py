@@ -85,6 +85,7 @@ class BlockTradesNodeLoader(NodeLoader):
             # 说明在以前有未完成的爬取
             # 直接进度清零
             if p.date < date.today():
+                print(f'检测到 {p.date} 未爬取完毕的进度 {p.progress}，清零此进度...')
                 p.progress = 0
                 p.save()
             # 更新日期
