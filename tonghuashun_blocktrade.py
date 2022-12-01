@@ -8,10 +8,10 @@ from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-from datasource import DB_POSTGRES
-from engine import *
-from progress import Progress
-from util import plus_month
+from framework.datasource import DB_POSTGRES
+from framework.engine import *
+from framework.progress import Progress
+from framework.util import plus_month
 
 PROGRESS_NAME = 'tonghuashun_blocktrade'
 

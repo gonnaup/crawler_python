@@ -1,6 +1,6 @@
 from peewee import Model, AutoField, CharField, IntegerField, DateField
 
-from datasource import DB_POSTGRES
+from framework.datasource import DB_POSTGRES
 
 
 class Progress(Model):
