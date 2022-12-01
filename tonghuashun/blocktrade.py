@@ -1,19 +1,19 @@
-from datetime import datetime, date
+from datetime import date
 
 from bs4 import BeautifulSoup, Tag
-from peewee import Model, PostgresqlDatabase, DateField, CharField, DecimalField, AutoField
+from peewee import Model, DateField, CharField, DecimalField, AutoField
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
+from datasource import DB
 from engine import *
 from progress import Progress
+from util import plus_month
 
 PROGRESS_NAME = 'tonghuashun_blocktrade'
-db = PostgresqlDatabase('test', host='localhost', user='postgres', password='123456')
-print("database init finished... ", 'OK!' if db.connect() else 'FAILED!')
 
 
 class BlockTrade(Model):
@@ -36,7 +36,8 @@ class BlockTrade(Model):
                f'department_seller={self.department_seller}] '
 
     class Meta:
-        database = db
+        database = DB
+        table_name = 't_tonghuashun_blocktrade'
 
 
 class BlockTradesNodeLoader(NodeLoader):
@@ -45,9 +46,7 @@ class BlockTradesNodeLoader(NodeLoader):
     _first_load = True
 
     def __init__(self):
-        """
-        webdrive init
-        """
+        # webdrive init
         options = webdriver.EdgeOptions()
         # 去除顶部栏的 "Microsoft Edge 正由自动测试软件控制" 字样
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
@@ -64,18 +63,33 @@ class BlockTradesNodeLoader(NodeLoader):
         self.__driver = driver
         self.__driver.implicitly_wait(5)
         self.__driver.get(self._url)
-        # 绑定 db
-        Progress.bind(database=db)
+
         # 如果表不存在则创建
         Progress.create_table()
         p: Progress = Progress.get_or_none(Progress.name == PROGRESS_NAME)
+
+        # 创建 大宗交易表
+        BlockTrade.create_table()
+
         self.__wait_page_load_completed()
+        # 初始化最大页数
         el_page_info = self.__driver.find_element(By.XPATH, '//*[@id="J-ajax-main"]/div[2]/span')
         _page_info = el_page_info.text  # 1/200
         self.max_page = int(_page_info.removeprefix('1/'))
         print(f'max page {self.max_page}')
+
+        # 进度初始化
         if p:
             print(f'数据库中存在 progress = {PROGRESS_NAME} => {p}')
+            # 如果当天还未爬取数据，但进度不为0
+            # 说明在以前有未完成的爬取
+            # 直接进度清零
+            if p.date < date.today():
+                p.progress = 0
+                p.save()
+            # 更新日期
+            p.date = date.today()
+            p.save()
             self._progress = p
             # 初始化页面进度
             self.__init_current_page_to_db_progress()
@@ -83,8 +97,16 @@ class BlockTradesNodeLoader(NodeLoader):
             #  当前页码 = 进度 + 1
             assert self._current_page == self._progress.progress + 1
         else:
-            self._progress = Progress.create(name=PROGRESS_NAME, progress=0, datetime=datetime.now())
+            self._progress = Progress.create(name=PROGRESS_NAME, progress=0, date=date.today())
             print(f'数据库中不存在 Progress = {PROGRESS_NAME} 初始化数据 => {self._progress}')
+
+        # 数据初始化
+        if self._progress.progress == 0:
+            # 进度为0则说明当天未爬取
+            # 页面数据为最近3个月数据，直接删除最近3个月数据后重新填充
+            today = date.today()
+            BlockTrade.delete().where(BlockTrade.trade_date.between(plus_month(today, -3), today)).execute()
+            print('删除最近3个月的大宗交易数据...')
 
         print('爬取进度初始化完毕，开始爬取数据 ############')
 
@@ -115,6 +137,10 @@ class BlockTradesNodeLoader(NodeLoader):
             return btfs.find('div', id='J-ajax-main').find('table', class_='m-table J-ajax-table').find('tbody')
         else:
             print(f'已经达到最大页数 {self.max_page}, 停止爬取 ******')
+            print(f'总共爬取 {BlockTrade.select().count()} 条数据')
+            self._progress.progress = 0
+            self._progress.save()
+            print('进度清零完毕...')
             return None
 
     def update_progress(self):
@@ -297,7 +323,9 @@ class BlockTradesNodePaser(NodeParser):
 class BlockTradesHandler(DomainHandler):
 
     def hande(self, data: list[BlockTrade]):
-        print(f'处理数据 {len(data)} 条 ~~~~~~~~~')
+        data_fields = list(map(lambda d: d.__dict__['__data__'], data))
+        results = BlockTrade.insert_many(data_fields).execute()
+        print(f'接收数据 {len(data)} 条，存入数据库 {len(list(results))} 条 ~~~~~~~~~')
 
 
 def start_crawle_blockTrade():
