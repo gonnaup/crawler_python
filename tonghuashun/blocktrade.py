@@ -8,7 +8,7 @@ from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-from datasource import DB
+from datasource import DB_POSTGRES
 from engine import *
 from progress import Progress
 from util import plus_month
@@ -36,7 +36,7 @@ class BlockTrade(Model):
                f'department_seller={self.department_seller}] '
 
     class Meta:
-        database = DB
+        database = DB_POSTGRES
         table_name = 't_tonghuashun_blocktrade'
 
 
@@ -59,7 +59,7 @@ class BlockTradesNodeLoader(NodeLoader):
             get: () => undefined
             })
             '''
-        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": script})
+        driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
         self.__driver = driver
         self.__driver.implicitly_wait(5)
         self.__driver.get(self._url)
@@ -316,7 +316,7 @@ class BlockTradesNodePaser(NodeParser):
                 trade.department_seller = fields[9].text.strip()
                 trades.append(trade)
             else:
-                print(f"************ 当前页第 {i + 1} 行数据格式错误, 正常每行列数 {row_length}，当前 {len(fields)} 列")
+                print(f'************ 当前页第 {i + 1} 行数据格式错误, 正常每行列数 {row_length}，当前 {len(fields)} 列')
         print(f'解析当前页面共获取 {len(trades)} 条正常数据 >>>>>')
         return trades
 
