@@ -78,19 +78,22 @@ class BlockTradesNodeLoader(NodeLoader):
         self.max_page = int(_page_info.removeprefix('1/'))
         print(f'max page {self.max_page}')
 
+        today = date.today()
         # 进度初始化
         if p:
             print(f'数据库中存在 progress = {PROGRESS_NAME} => {p}')
             # 如果当天还未爬取数据，但进度不为0
             # 说明在以前有未完成的爬取
             # 直接进度清零
-            if p.date < date.today():
+            if p.date < today and p.progress != 0:
                 print(f'检测到 {p.date} 未爬取完毕的进度 {p.progress}，清零此进度...')
                 p.progress = 0
                 p.save()
             # 更新日期
-            p.date = date.today()
-            p.save()
+            if p.date != today:
+                print(f'更新进度日期 {p.date} 为当天 {today}')
+                p.date = today
+                p.save()
             self._progress = p
             # 初始化页面进度
             self.__init_current_page_to_db_progress()
@@ -98,16 +101,16 @@ class BlockTradesNodeLoader(NodeLoader):
             #  当前页码 = 进度 + 1
             assert self._current_page == self._progress.progress + 1
         else:
-            self._progress = Progress.create(name=PROGRESS_NAME, progress=0, date=date.today())
+            self._progress = Progress.create(name=PROGRESS_NAME, progress=0, date=today)
             print(f'数据库中不存在 Progress = {PROGRESS_NAME} 初始化数据 => {self._progress}')
 
         # 数据初始化
         if self._progress.progress == 0:
             # 进度为0则说明当天未爬取
             # 页面数据为最近3个月数据，直接删除最近3个月数据后重新填充
-            today = date.today()
-            BlockTrade.delete().where(BlockTrade.trade_date.between(plus_month(today, -3), today)).execute()
-            print('删除最近3个月的大宗交易数据...')
+            three_month_ago = plus_month(today, -3)
+            BlockTrade.delete().where(BlockTrade.trade_date.between(three_month_ago, today)).execute()
+            print(f'删除最近3个月 [{three_month_ago}] - [{today}] 的大宗交易数据...')
 
         print('爬取进度初始化完毕，开始爬取数据 ############')
 
