@@ -1,5 +1,27 @@
 from datetime import date
 
+from selenium import webdriver
+from selenium.webdriver.edge.service import Service as EdgeService
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
+
+def new_edge_webdriver():
+    # webdrive init
+    options = webdriver.EdgeOptions()
+    # 去除顶部栏的 "Microsoft Edge 正由自动测试软件控制" 字样
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    driver = webdriver.Edge(options=options, service=EdgeService(EdgeChromiumDriverManager().install()))
+    # 设置 window.navigator.webdriver=undefined
+    # 否则 使用 drive.get() 启动浏览器时，window.navigator.webdriver属性为true，
+    # 反爬虫脚本会根据此属性判断为爬虫脚本
+    script = '''
+            Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined
+            })
+            '''
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
+    return driver
+
 
 def plus_month(_date: date, month_add) -> date:
     months = _date.year * 12 + _date.month

@@ -1,22 +1,20 @@
 from datetime import date
+from time import sleep
 
 from bs4 import BeautifulSoup, Tag
 from peewee import Model, DateField, CharField, DecimalField, AutoField
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.support.wait import WebDriverWait
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-from framework.datasource import DB_POSTGRES
-from framework.engine import *
-from framework.progress import Progress
-from framework.util import plus_month
+from framework import *
 
 PROGRESS_NAME = 'tonghuashun_blocktrade'
 
 
 class BlockTrade(Model):
+    """
+    同花顺大宗交易数据模型
+    """
     id = AutoField(primary_key=True)  # ID
     trade_date = DateField()  # 交易时间
     stock_code = CharField()  # 股票代码
@@ -36,30 +34,17 @@ class BlockTrade(Model):
                f'department_seller={self.department_seller}] '
 
     class Meta:
-        database = DB_POSTGRES
+        database = DB
         table_name = 't_tonghuashun_blocktrade'
 
 
-class BlockTradesNodeLoader(NodeLoader):
+class BlockTradesNodeLoader(Loader):
     _current_page = 1
     _url = 'http://data.10jqka.com.cn/market/dzjy/'
     _first_load = True
 
     def __init__(self):
-        # webdrive init
-        options = webdriver.EdgeOptions()
-        # 去除顶部栏的 "Microsoft Edge 正由自动测试软件控制" 字样
-        options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        driver = webdriver.Edge(options=options, service=EdgeService(EdgeChromiumDriverManager().install()))
-        # 设置 window.navigator.webdriver=undefined
-        # 否则 使用 drive.get() 启动浏览器时，window.navigator.webdriver属性为true，
-        # 反爬虫脚本会根据此属性判断为爬虫脚本
-        script = '''
-            Object.defineProperty(navigator, 'webdriver', {
-            get: () => undefined
-            })
-            '''
-        driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
+        driver = edge_webdriver()
         self.__driver = driver
         self.__driver.implicitly_wait(5)
         self.__driver.get(self._url)
@@ -278,7 +263,7 @@ class BlockTradesNodeLoader(NodeLoader):
         self.__driver.quit()
 
 
-class BlockTradesNodePaser(NodeParser):
+class BlockTradesNodePaser(Parser):
     def parse_node(self, tbody_node: Tag) -> []:
         """
         解析表格，得到大宗交易数据
@@ -324,7 +309,7 @@ class BlockTradesNodePaser(NodeParser):
         return trades
 
 
-class BlockTradesHandler(DomainHandler):
+class BlockTradesHandler(Handler):
 
     def hande(self, data: list[BlockTrade]):
         data_fields = list(map(lambda d: d.__dict__['__data__'], data))
@@ -333,7 +318,7 @@ class BlockTradesHandler(DomainHandler):
 
 
 def start_crawle_blockTrade():
-    engine = CommonCrawleEngine(BlockTradesNodeLoader(), BlockTradesNodePaser(), BlockTradesHandler())
+    engine = CrawleEngine(BlockTradesNodeLoader(), BlockTradesNodePaser(), BlockTradesHandler())
     engine.engin_start(stop_max=10, stop_min=5)
 
 
