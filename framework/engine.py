@@ -55,7 +55,7 @@ class CommonCrawleEngine:
         self.parser = nodeParser
         self.handler = handler
 
-    def engine_start(self, stop_min: int = 1, stop_max: int = 8):
+    def engine_start(self, min_pause=1, max_pause=5):
         # 解析出 dom 的数据跟节点
         root = self.loader.load_next()
         while root:
@@ -66,7 +66,7 @@ class CommonCrawleEngine:
             # 更新进度
             self.loader.update_progress()
             # 等待
-            sleepTime = random.randint(stop_min, stop_max)
+            sleepTime = random.randint(min_pause, max_pause)
             sleep(sleepTime)
             # 下一节点
             root = self.loader.load_next()

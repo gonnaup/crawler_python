@@ -216,7 +216,7 @@ class NovelsHandler(Handler):
 
 def start_crawle_novel():
     engine = CrawleEngine(NovelNodeLoader(), NovelNodeParser(), NovelsHandler())
-    engine.engine_start(stop_max=3)
+    engine.engine_start(max_pause=3)
 
 
 if __name__ == '__main__':

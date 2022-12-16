@@ -320,7 +320,7 @@ class BlockTradesHandler(Handler):
 
 def start_crawle_blockTrade():
     engine = CrawleEngine(BlockTradesNodeLoader(), BlockTradesNodePaser(), BlockTradesHandler())
-    engine.engine_start(stop_max=10, stop_min=5)
+    engine.engine_start(min_pause=3, max_pause=6)
 
 
 if __name__ == '__main__':
