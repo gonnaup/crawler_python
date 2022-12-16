@@ -1,4 +1,4 @@
-draft.py
+draft*.py
 __pycache__/
 
 # Environments

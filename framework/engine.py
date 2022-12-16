@@ -27,7 +27,7 @@ class NodeParser:
     """
 
     @abstractmethod
-    def parse_node(self, node) -> []:
+    def parse_node(self, root) -> []:
         """
         解析dome节点对象为数据对象
         :return:
@@ -55,12 +55,12 @@ class CommonCrawleEngine:
         self.parser = nodeParser
         self.handler = handler
 
-    def engin_start(self, stop_min: int = 1, stop_max: int = 8):
+    def engine_start(self, stop_min: int = 1, stop_max: int = 8):
         # 解析出 dom 的数据跟节点
-        node = self.loader.load_next()
-        while node:
+        root = self.loader.load_next()
+        while root:
             # 解析出数据 list
-            data = self.parser.parse_node(node)
+            data = self.parser.parse_node(root)
             # 处理数据
             self.handler.hande(data)
             # 更新进度
@@ -69,4 +69,4 @@ class CommonCrawleEngine:
             sleepTime = random.randint(stop_min, stop_max)
             sleep(sleepTime)
             # 下一节点
-            node = self.loader.load_next()
+            root = self.loader.load_next()

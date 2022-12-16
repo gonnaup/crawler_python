@@ -20,6 +20,7 @@ def new_edge_webdriver():
             })
             '''
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
+    print('webdriver init successfully...')
     return driver
 
 
