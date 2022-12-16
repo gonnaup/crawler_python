@@ -313,6 +313,7 @@ class BlockTradesHandler(Handler):
 
     def hande(self, data: list[BlockTrade]):
         data_fields = list(map(lambda d: d.__dict__['__data__'], data))
+        # postgres 返回插入数据的 ID 集合
         results = BlockTrade.insert_many(data_fields).execute()
         print(f'接收数据 {len(data)} 条，存入数据库 {len(list(results))} 条 ~~~~~~~~~')
 
