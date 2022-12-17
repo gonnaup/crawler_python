@@ -23,7 +23,7 @@ class Novel(Model):
     words = CharField(null=True)  # 字数
     status = CharField(null=True)  # 状态
     tag = CharField(null=True)  # 标签
-    introduce = CharField(max_length=2000)  # introduce
+    introduce = CharField(max_length=3000)  # introduce
     novelUrl = CharField(max_length=500)
     coverUrl = CharField(max_length=500)
 
