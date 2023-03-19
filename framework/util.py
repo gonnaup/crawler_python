@@ -32,6 +32,10 @@ def plus_month(_date: date, month_add) -> date:
         raise Exception(f'月份参数必须大于 {-months}')
     year = _month // 12
     month = _month % 12
+    # 解决整除时(month==0)的bug，如(2023-03-12, -3),结果应为(2022-12-12)
+    if month == 0:
+        year -= 1
+        month = 12
     return __valid_day(year, month, _date.day)
 
 
@@ -61,3 +65,5 @@ def __is_leap_year(year: int) -> bool:
 
 if __name__ == '__main__':
     print(plus_month(date.today(), -83))
+    print(plus_month(date.today(), -date.today().month))
+    print(plus_month(date.today(), 12 - date.today().month))
