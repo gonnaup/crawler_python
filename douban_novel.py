@@ -170,7 +170,7 @@ class NovelNodeParser(Parser):
         author_a = author_.find('a')
         novel.authorUrl = self.base_url + author_a.attrs['href']
         novel.author = author_a.next.next.text.strip()
-        intro_ = info_div.find('div', class_='intro')
+        intro_ = info_div.find('a', class_='intro')
         novel.introduce = ''.join(
             intro_.next.next.text.strip().split()) if intro_.next.next else ""
         etra_info_ = info_div.find('div', class_='extra-info')
