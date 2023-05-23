@@ -1,4 +1,4 @@
-from framework.datasource import DB_POSTGRES as DB
+from framework.datasource import _DB as DB
 from framework.engine import CommonCrawleEngine as CrawleEngine, NodeLoader as Loader, NodeParser as Parser, \
     DomainHandler as Handler
 from framework.progress import Progress

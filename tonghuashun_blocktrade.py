@@ -315,7 +315,8 @@ class BlockTradesHandler(Handler):
         data_fields = list(map(lambda d: d.__dict__['__data__'], data))
         # postgres 返回插入数据的 ID 集合
         results = BlockTrade.insert_many(data_fields).execute()
-        print(f'接收数据 {len(data)} 条，存入数据库 {len(list(results))} 条 ~~~~~~~~~')
+        # mysql 返回数据总条数（int），postgres 返回插入数据集合
+        print(f'接收数据 {len(data)} 条，存入数据库 {results if isinstance(results, int)  else len(list(results))} 条 ~~~~~~~~~')
 
 
 def start_crawle_blockTrade():

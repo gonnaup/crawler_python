@@ -32,7 +32,7 @@ class Novel(Model):
                f'words={self.words}, status={self.status}, tag={self.tag}]'
 
     class Meta:
-        database = DB
+        database = _DB
         table_name = 't_douban_novel'
 
 
