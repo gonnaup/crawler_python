@@ -32,7 +32,7 @@ class Novel(Model):
                f'words={self.words}, status={self.status}, tag={self.tag}]'
 
     class Meta:
-        database = _DB
+        database = DB
         table_name = 't_douban_novel'
 
 
@@ -40,7 +40,7 @@ class NovelNodeLoader(Loader):
     current_page = 0
 
     def __init__(self):
-        self._driver = edge_webdriver()
+        self._driver = chrome_webdriver()
         # first page
         self._driver.get('https://read.douban.com/category/?sort=hot&sale=&page=1&progress=')
 

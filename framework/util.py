@@ -3,6 +3,22 @@ from datetime import date
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service as EdgeService
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
+
+def new_chrome_webdriver():
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
+    script = '''
+                Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+                })
+                '''
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
+    print("chrome webdriver init successfully...")
+    return driver
 
 
 def new_edge_webdriver():
@@ -20,7 +36,7 @@ def new_edge_webdriver():
             })
             '''
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': script})
-    print('webdriver init successfully...')
+    print('edge webdriver init successfully...')
     return driver
 
 

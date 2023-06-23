@@ -44,7 +44,7 @@ class BlockTradesNodeLoader(Loader):
     _first_load = True
 
     def __init__(self):
-        driver = edge_webdriver()
+        driver = chrome_webdriver()
         self.__driver = driver
         self.__driver.implicitly_wait(5)
         self.__driver.get(self._url)
